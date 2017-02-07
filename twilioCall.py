@@ -5,8 +5,8 @@ import time
 import os
 
 from flask import Flask, request, redirect
-import twilio.twiml
-
+from twilio import twiml
+import twilio
 
 
 class MessageBuilder:
@@ -50,34 +50,38 @@ def wait():
     os.system('read -s -n 1 -p "Press any key to continue..."')
 
 
-RAN_ONCE = False
-config = ParseTwilioConfig.Parser("sagar.config")
-config.parseConfig()
+def run_once(f):
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper.has_run = True
+            return f(*args, **kwargs)
+    wrapper.has_run = False
+    return wrapper
 
+
+@run_once
 def runOnce():
-    if not RAN_ONCE:
-        account_sid = config.getAccountSid()
-        auth_token  = config.getAuthToken()
-        client = TwilioRestClient(account_sid, auth_token)
+    account_sid = config.getAccountSid()
+    auth_token  = config.getAuthToken()
+    client = TwilioRestClient(account_sid, auth_token)
 
 
-        Mbuilder = MessageBuilder()
-        m1 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.Body)
-        print "Sent Body"
-        time.sleep(30)
+    Mbuilder = MessageBuilder()
+    m1 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.Body)
+    print "Sent Body"
+    time.sleep(5)
 
-        m2 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.buildWelcomeMessage())
-        print "Sent Welcome message"
-        time.sleep(30)
+    m2 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.buildWelcomeMessage())
+    print "Sent Welcome message"
+    time.sleep(5)
 
-        m3 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src(), body = Mbuilder.buildBaggageMessage())
-        print " Sent baggage message"
-        time.sleep(30)
+    m3 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src(), body = Mbuilder.buildBaggageMessage())
+    print " Sent baggage message"
+    time.sleep(5)
 
-        m4 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src() , body = Mbuilder.buildFarewell() );
-        print "Sent farewell"
+    m4 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src() , body = Mbuilder.buildFarewell() );
+    print "Sent farewell"
 
-        RAN_ONCE = True
 
 
 app = Flask(__name__)
@@ -87,16 +91,35 @@ def hello_monkey():
     """Respond to incoming calls with a simple text message."""
 
     resp = twilio.twiml.Response()
-    resp.message("Hello, Mobile Monkey")
+    inbound_message = request.form.get('Body')
+    print "recieved : " + inbound_message
+    response_message = "I don't understand what you meant...need more code!"
+    if inbound_message != "Hello":
+        resp.message(response_message)
+    else:
+        resp.message("Hello to you too")
     return str(resp)
 
+# @app.route("/twilio", methods=['POST'])
+# def inbound_sms():
+#     twiml_response = twiml.Response()
+#     inbound_message = request.forms.get("Body")
+#     response_message = "I don't understand what you meant...need more code!"
+#     # we can use the incoming message text in a condition statement
+#     if inbound_message == "Hello":
+#         response_message = "Well, hello right back at ya!"
+#     twiml_response.message(response_message)
+#     # we return back the mimetype because Twilio needs an XML response
+#     response.content_type = "application/xml"
+#     return str(twiml_response)
 
 
 if __name__ == "__main__":
+    config = ParseTwilioConfig.Parser("sagar.config")
+    config.parseConfig()
 
-    runOnce()
-
-    app.run(debug=True)
+    #runOnce()
+    app.run(debug=False)
 
 
 

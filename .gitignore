@@ -1,1 +1,7 @@
 sagar.config
+ParseTwilioConfig.pyc
+envHappiness/bin
+envHappiness/include
+envHappiness/lib
+envHappiness/pip-selfcheck.json
+ngrok
