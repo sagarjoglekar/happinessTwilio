@@ -78,6 +78,7 @@ class NooraComms:
             response_message = responseDict['result']['fulfillment']['speech']
         else:
             response_message = "Something went Terrible wrong with my brain, Bear with me !! "
+        print response_message
 
         return response_message
 
@@ -98,7 +99,7 @@ def run_once(f):
 
 
 @run_once
-def runOnce():
+def runOnce(config):
     account_sid = config.getAccountSid()
     auth_token  = config.getAuthToken()
     client = TwilioRestClient(account_sid, auth_token)
@@ -107,19 +108,29 @@ def runOnce():
     Mbuilder = MessageBuilder()
     m1 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.Body)
     print "Sent Body"
-    time.sleep(5)
+    #time.sleep(5)
+    wait()
 
     m2 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.buildWelcomeMessage())
     print "Sent Welcome message"
-    time.sleep(5)
+    #time.sleep(5)
+    wait()
 
     m3 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src(), body = Mbuilder.buildBaggageMessage())
     print " Sent baggage message"
-    time.sleep(5)
+    #time.sleep(5)
+    wait()
 
     m4 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src() , body = Mbuilder.buildFarewell() );
     print "Sent farewell"
 
+@run_once
+def placeIntroCall(config):
+    client = TwilioRestClient(config.getAccountSid(), config.getAuthToken())
+    call = client.calls.create(url="https://dl.dropboxusercontent.com/u/1864833/firstCall.xml",
+    #to="+17072196111",
+    to ="+46729994117",
+    from_ = "+17079883108")
 
 
 app = Flask(__name__)
@@ -160,7 +171,9 @@ if __name__ == "__main__":
     config.parseConfig()
 
     NooraEngine = NooraComms(config)
-    #runOnce()
+    placeIntroCall(config)
+    wait()
+    #runOnce(config)
     app.run(debug=False)
 
 
