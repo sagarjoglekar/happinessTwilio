@@ -3,14 +3,22 @@ from twilio.rest import TwilioRestClient
 import ParseTwilioConfig
 import time
 import os
-
+import json
 from flask import Flask, request, redirect
 from twilio import twiml
 import twilio
 
+try:
+    import apiai
+except ImportError:
+    sys.path.append(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
+    )
+    import apiai
+
 
 class MessageBuilder:
-    _from = "+17079883108"
+    _from = "+17079883108 "
     _to = "+17072196111"
     Body = "Welcome to Dubai, This is a cost free Message.."
 
@@ -44,6 +52,36 @@ class MessageBuilder:
 
     def src(self):
         return self._from
+
+
+
+
+
+class NooraComms:
+
+    _clientAccess = ""
+    _devAccess = ""
+    def __init__(self,config):
+        self._clientAccess = config.getClientAccessAPIAI()
+        self._devAccess = config.getDevAccessAPIAI()
+
+    def sendQuery(self, text):
+        response_message = ""
+        ai = apiai.ApiAI(self._clientAccess)
+        request = ai.text_request()
+        request.lang = 'en'  # optional, default value equal 'en'
+        request.session_id = "<SESSION ID, UNIQUE FOR EACH USER>"
+        request.query = text
+        response = request.getresponse()
+        responseDict = json.loads (response.read())
+        if responseDict['status']['code'] == 200:
+            response_message = responseDict['result']['fulfillment']['speech']
+        else:
+            response_message = "Something went Terrible wrong with my brain, Bear with me !! "
+
+        return response_message
+
+
 
 
 def wait():
@@ -93,11 +131,14 @@ def hello_monkey():
     resp = twilio.twiml.Response()
     inbound_message = request.form.get('Body')
     print "recieved : " + inbound_message
-    response_message = "I don't understand what you meant...need more code!"
-    if inbound_message != "Hello":
-        resp.message(response_message)
-    else:
-        resp.message("Hello to you too")
+    # response_message = "I don't understand what you meant...need more code!"
+    # if inbound_message != "Hello":
+    #     resp.message(response_message)
+    # else:
+    #     resp.message("Hello to you too")
+    response_message = NooraEngine.sendQuery(inbound_message)
+    resp.message(response_message)
+
     return str(resp)
 
 # @app.route("/twilio", methods=['POST'])
@@ -115,9 +156,10 @@ def hello_monkey():
 
 
 if __name__ == "__main__":
-    config = ParseTwilioConfig.Parser("sagar.config")
+    config = ParseTwilioConfig.Parser("sagarProd.config")
     config.parseConfig()
 
+    NooraEngine = NooraComms(config)
     #runOnce()
     app.run(debug=False)
 

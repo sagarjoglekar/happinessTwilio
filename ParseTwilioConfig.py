@@ -5,7 +5,9 @@ class Parser:
     _account_sid = ""
     _auth_token = ""
     _configFilePath = ""
-    _maxTweets="100"
+    _botURL = ""
+    _clientAccesAPIAI = ""
+    _devAccessAPIAI = ""
     configParser = ConfigParser.RawConfigParser()
 
     def __init__(self, filepath):
@@ -21,6 +23,9 @@ class Parser:
         try:
             self._auth_token =  self.configParser.get('User_Twilio_Config','AuthToken')
             self._account_sid = self.configParser.get('User_Twilio_Config','AccountSid')
+            self._botURL = self.configParser.get('User_Twilio_Config','botURL')
+            self._clientAccesAPIAI = self.configParser.get('User_Twilio_Config','ClientAccessTokenAPIAI')
+            self._devAccessAPIAI = self.configParser.get('User_Twilio_Config','DevAccessTokenAPIAI')
         except:
             print 'Invalid configuration'
 
@@ -30,5 +35,14 @@ class Parser:
 
     def getAccountSid(self):
         return self._account_sid
+
+    def getBotURL(self):
+        return self._botURL
+
+    def getClientAccessAPIAI(self):
+        return self._clientAccesAPIAI
+
+    def getDevAccessAPIAI(self):
+        return self._devAccessAPIAI
 
 
