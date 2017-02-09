@@ -18,8 +18,9 @@ except ImportError:
 
 
 class MessageBuilder:
-    _from = "+17079883108 "
+    _from = "+17079883108"
     _to = "+17072196111"
+    #_to = "+447506225616"
     Body = "Welcome to Dubai, This is a cost free Message.."
 
     def __init__(self , t=None , f=None):
@@ -34,17 +35,17 @@ class MessageBuilder:
         return str1 + str2
 
     def buildWelcomeMessage(self):
-        str1 = "Currently the approximate immigration time is 35 minutes "
-        str2 = "Information about baggage would be delivered once you reach immigration"
+        str1 = "My name is Noora and I will be helping you through the airport.  At this hour, I can predict it will take you around 38 minutes to exit the airport.  If you have any questions, just ask me via SMS which are btw free of charge ."
+        str2 = ""
         return str1 + str2
 
     def buildBaggageMessage(self):
-        str1 = "Your bags are on Carousal 5"
-        str2 = "The turn around time is nominal and you should get your bags in approximately 10 minutes"
+        str1 = "I just wanted to let you know that if somebody is waiting for you at arrivals, you can send 'notify (phone number)', and I will keep them up to date with your progress."
+        str2 = ""
         return str1 + str2
 
     def buildFarewell(self):
-        str1 = "I hope your transit/experience with DXB was pleasent. We look forward to serve you again. Enjoy DubHI!!"
+        str1 = "All checked in baggage has been taken off the plane and will be arriving at conveyer belt 12 in approximately 25 minutes. After picking it up please proceed through customs to the arrival hall."
         return str1
 
     def to(self):
@@ -61,9 +62,13 @@ class NooraComms:
 
     _clientAccess = ""
     _devAccess = ""
-    def __init__(self,config):
+    _dest = ''
+    _src = ''
+    def __init__(self,config,dest , src):
         self._clientAccess = config.getClientAccessAPIAI()
         self._devAccess = config.getDevAccessAPIAI()
+        self._dest = dest
+        self._src = src
 
     def sendQuery(self, text):
         response_message = ""
@@ -76,11 +81,17 @@ class NooraComms:
         responseDict = json.loads (response.read())
         if responseDict['status']['code'] == 200:
             response_message = responseDict['result']['fulfillment']['speech']
+            print responseDict['result']
+            if responseDict['result']['action'] == 'initiateCall' :
+                placeHelpCall(config , self._dest , self._src)
         else:
             response_message = "Something went Terrible wrong with my brain, Bear with me !! "
         print response_message
 
         return response_message
+
+    def processEvents(self , event):
+        print signal
 
 
 
@@ -99,13 +110,13 @@ def run_once(f):
 
 
 @run_once
-def runOnce(config):
+def runOnce(config , dst , src):
     account_sid = config.getAccountSid()
     auth_token  = config.getAuthToken()
     client = TwilioRestClient(account_sid, auth_token)
 
 
-    Mbuilder = MessageBuilder()
+    Mbuilder = MessageBuilder(dst , src)
     m1 = client.messages.create(to=Mbuilder.to(), from_=Mbuilder.src(),body=Mbuilder.Body)
     print "Sent Body"
     #time.sleep(5)
@@ -116,21 +127,29 @@ def runOnce(config):
     #time.sleep(5)
     wait()
 
-    m3 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src(), body = Mbuilder.buildBaggageMessage())
-    print " Sent baggage message"
-    #time.sleep(5)
-    wait()
 
     m4 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src() , body = Mbuilder.buildFarewell() );
-    print "Sent farewell"
+    print "Sent Bags message"
+    wait()
+
+    m3 = client.messages.create( to = Mbuilder.to() , from_ = Mbuilder.src(), body = Mbuilder.buildBaggageMessage())
+    print " Sent Notify Message"
 
 @run_once
-def placeIntroCall(config):
+def placeIntroCall(config , dest , src):
     client = TwilioRestClient(config.getAccountSid(), config.getAuthToken())
     call = client.calls.create(url="https://dl.dropboxusercontent.com/u/1864833/firstCall.xml",
-    #to="+17072196111",
-    to ="+46729994117",
-    from_ = "+17079883108")
+    #to="+40734203494",
+    to =dest,
+    from_ = src)
+
+
+def placeHelpCall(config , dest , src):
+    client = TwilioRestClient(config.getAccountSid(), config.getAuthToken())
+    call = client.calls.create(url="https://dl.dropboxusercontent.com/u/1864833/helpCall.xml",
+    #to="+40734203494",
+    to =dest,
+    from_ = src)
 
 
 app = Flask(__name__)
@@ -152,28 +171,17 @@ def hello_monkey():
 
     return str(resp)
 
-# @app.route("/twilio", methods=['POST'])
-# def inbound_sms():
-#     twiml_response = twiml.Response()
-#     inbound_message = request.forms.get("Body")
-#     response_message = "I don't understand what you meant...need more code!"
-#     # we can use the incoming message text in a condition statement
-#     if inbound_message == "Hello":
-#         response_message = "Well, hello right back at ya!"
-#     twiml_response.message(response_message)
-#     # we return back the mimetype because Twilio needs an XML response
-#     response.content_type = "application/xml"
-#     return str(twiml_response)
-
 
 if __name__ == "__main__":
     config = ParseTwilioConfig.Parser("sagarProd.config")
+    dest_ = "+17072196111"
+    src_ = "+17079883108"
     config.parseConfig()
 
-    NooraEngine = NooraComms(config)
-    placeIntroCall(config)
+    NooraEngine = NooraComms(config , dest_ , src_ )
+    #placeIntroCall(config , dest_ , src_)
     wait()
-    #runOnce(config)
+    #runOnce(config , dest_ , src _)
     app.run(debug=False)
 
 
