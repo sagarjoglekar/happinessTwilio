@@ -179,9 +179,9 @@ if __name__ == "__main__":
     config.parseConfig()
 
     NooraEngine = NooraComms(config , dest_ , src_ )
-    #placeIntroCall(config , dest_ , src_)
+    placeIntroCall(config , dest_ , src_)
     wait()
-    #runOnce(config , dest_ , src _)
+    runOnce(config , dest_ , src_)
     app.run(debug=False)
 
 
